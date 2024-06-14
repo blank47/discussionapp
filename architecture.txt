@@ -1,0 +1,78 @@
+/my_flask_project
+│
+├── /app
+│   ├── __init__.py          # Initializes the Flask app and brings together other components
+│   ├── /main                # Main Blueprint of the app
+│   │   ├── __init__.py      # Initializes the main Blueprint
+│   │   ├── views.py         # Contains routes for the Blueprint
+│   │   └── forms.py         # Contains WTForms classes if you are using forms
+│   ├── /templates           # Contains the HTML templates
+│   │   └── index.html
+│   ├── /static              # Contains static files like CSS, JavaScript, images
+│   │   └── /css
+│   │       └── style.css
+│   ├── /models              # Contains SQLAlchemy models
+│   │   ├── __init__.py
+│   │   └── models.py
+│   └── /services            # Business logic layer or service layer
+│       ├── __init__.py
+│       └── some_service.py
+│
+├── /migrations              # Migration scripts created by Flask-Migrate
+│   ├── versions             # Individual migration scripts
+│   └── env.py
+│
+├── /tests                   # Contains unit and integration tests
+│   ├── __init__.py
+│   └── test_basic.py
+│
+├── config.py                # Contains configuration settings for different environments
+├── requirements.txt         # Contains a list of project dependencies
+├── run.py                   # Entry point to start the Flask application
+└── .env                     # Environment-specific variables to be set (not to be committed)
+
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    mobile_no = db.Column(db.String(50), unique=True, nullable=False)
+    discussions = db.relationship('Discussion', backref='author', lazy='dynamic')
+    comments = db.relationship('Comment', backref='commenter', lazy='dynamic')
+    likes = db.relationship('Like', backref='liker', lazy='dynamic')
+    followed = db.relationship(
+        'Follow', foreign_keys='Follow.follower_id',
+        backref='follower', lazy='dynamic', cascade='all, delete-orphan'
+    )
+    followers = db.relationship(
+        'Follow', foreign_keys='Follow.followed_id',
+        backref='followed', lazy='dynamic', cascade='all, delete-orphan'
+    )
+
+class Discussion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.Text, nullable=False)
+    image = db.Column(db.String(300), nullable=True)
+    created_on = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    comments = db.relationship('Comment', backref='discussion', lazy='dynamic')
+    likes = db.relationship('Like', backref='discussion', lazy='dynamic')
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.Text, nullable=False)
+    created_on = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    discussion_id = db.Column(db.Integer, db.ForeignKey('discussion.id'))
+
+class Like(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    created_on = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    discussion_id = db.Column(db.Integer, db.ForeignKey('discussion.id', ondelete="CASCADE"), nullable=True)
+    comment_id = db.Column(db.Integer, db.ForeignKey('comment.id', ondelete="CASCADE"), nullable=True)
+
+class Follow(db.Model):
+    follower_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    followed_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
