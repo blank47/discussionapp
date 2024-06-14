@@ -32,47 +32,22 @@
 └── .env                     # Environment-specific variables to be set (not to be committed)
 
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    mobile_no = db.Column(db.String(50), unique=True, nullable=False)
-    discussions = db.relationship('Discussion', backref='author', lazy='dynamic')
-    comments = db.relationship('Comment', backref='commenter', lazy='dynamic')
-    likes = db.relationship('Like', backref='liker', lazy='dynamic')
-    followed = db.relationship(
-        'Follow', foreign_keys='Follow.follower_id',
-        backref='follower', lazy='dynamic', cascade='all, delete-orphan'
-    )
-    followers = db.relationship(
-        'Follow', foreign_keys='Follow.followed_id',
-        backref='followed', lazy='dynamic', cascade='all, delete-orphan'
-    )
+Microservices Architecture Breakdown
 
-class Discussion(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.Text, nullable=False)
-    image = db.Column(db.String(300), nullable=True)
-    created_on = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    comments = db.relationship('Comment', backref='discussion', lazy='dynamic')
-    likes = db.relationship('Like', backref='discussion', lazy='dynamic')
-
-class Comment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.Text, nullable=False)
-    created_on = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    discussion_id = db.Column(db.Integer, db.ForeignKey('discussion.id'))
-
-class Like(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    created_on = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    discussion_id = db.Column(db.Integer, db.ForeignKey('discussion.id', ondelete="CASCADE"), nullable=True)
-    comment_id = db.Column(db.Integer, db.ForeignKey('comment.id', ondelete="CASCADE"), nullable=True)
-
-class Follow(db.Model):
-    follower_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-    followed_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+For a discussion platform with user interactions, you can structure your system into the following microservices:
+User Service
+•	Responsibilities: Manages user registration, authentication, profile updates, and user data retrieval.
+•	Endpoints:
+o	POST /users - Create a new user
+o	GET /users/{id} - Retrieve user information
+o	PUT /users/{id} - Update user information
+o	DELETE /users/{id} - Delete a user
+Discussion Service
+•	Responsibilities: Handles all operations related to discussions such as creating, updating, fetching, and deleting discussions.
+•	Endpoints:
+o	POST /discussions - Create a new discussion
+o	GET /discussions/{id} - Retrieve a specific discussion
+o	PUT /discussions/{id} - Update a discussion
+o	DELETE /discussions/{id} - Delete a discussion
+o	GET /discussions - List discussions with filters
+Currently we did include Likes Follows and Comments as well, we can separate each database into different services as well
